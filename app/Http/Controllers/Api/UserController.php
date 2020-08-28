@@ -1,13 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\api;
 
-use App\Brand;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Http\Resources\BrandResource;
-
-class BrandController extends Controller
+use App\Http\Resources\UserResource;
+use App\User;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+class UserController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -16,8 +17,7 @@ class BrandController extends Controller
      */
     public function index()
     {
-        $brands=Brand::all();
-        return BrandResource::collection($brands);
+        //
     }
 
     /**
@@ -28,46 +28,43 @@ class BrandController extends Controller
      */
     public function store(Request $request)
     {
+        //
         $request->validate([
-
             'name' => 'required',
-            'photo' => 'required',
+            'email' => 'required',
+            'password' => 'required',
+
         ]);
 
-        //File Upload
-        $imageName=time().'.'.$request->photo->extension();
-        $request->photo->move(public_path('backendtemplate/brandimg'),$imageName);
-        $myfile='backendtemplate/brandimg/'.$imageName;
-
-        //Store Data
-        $brand=new Brand;
-        $brand->name=$request->name;
-        $brand->photo=$myfile;
-        $brand->save();
-        return new BrandResource($brand);
-
+        $user=new User;
+        $user->name=$request->name;
+        $user->email=$request->email;
+        $user->password=Hash::make($request->password);
+        $user->email_verified_at=now();
+        $user->remember_token=Str::random(10);
+        $user->save();
+        return $user;
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  \App\Brand  $brand
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show(Brand $brand)
+    public function show($id)
     {
-
-        return new BrandResource($brand);
+       // return new UserController($user);
     }
 
     /**
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Brand  $brand
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Brand $brand)
+    public function update(Request $request, $id)
     {
         //
     }
@@ -75,10 +72,10 @@ class BrandController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Brand  $brand
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Brand $brand)
+    public function destroy($id)
     {
         //
     }
