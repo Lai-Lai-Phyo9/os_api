@@ -11,7 +11,7 @@ class ItemController extends Controller
 {
     public function __construct($value='')
     {
-        $this->middleware('auth:api')->except('index','filter');
+        $this->middleware('auth:api')->except('index','filter','searchBrand','searchSubcategory','searchName');
     }
     /**
      * Display a listing of the resource.
@@ -25,8 +25,6 @@ class ItemController extends Controller
             "status" => "ok",
             "totalResults" => count($items),
             "items" => ItemResource::collection($items)
-
-
         ]);
     }
 
@@ -103,22 +101,70 @@ class ItemController extends Controller
     {
         //
     }
+
+
     public function filter($sid,$bid)
     {
-        //
         $items=array();
         if($sid && $bid){
             $items=Item::where('subcategory_id',$sid)
                         ->where('brand_id',$bid)
                         ->get();
-
         }else{
             $items=Item::where('subcategory_id',$sid)
                         ->or_where('brand_id',$bid)
                         ->get();
-
         }
-        return $items;
+        //return $items;
+        return response()->json([
+            "status" => "ok",
+            "totalResults" => count($items),
+            "items" => ItemResource::collection($items)
+        ]);
     }
+
+    //search by brand
+    public function searchBrand(Request $request)
+    {
+        $bid=$request->get('brand');
+        $items=array();
+        
+        $items = Item::where('brand_id',$bid)->get();
+        //return $items;
+        return response()->json([
+            'status' => 'ok',
+            'totalResults' => count($items),
+            'items' => ItemResource::collection($items)
+        ]);
+    }
+    //search by subcategory
+    public function searchSubcategory(Request $request)
+    {
+        $sid=$request->get('subcategory');
+        $items=array();
+        
+        $items = Item::where('subcategory_id',$sid)->get();
+        //return $items;
+        return response()->json([
+            'status' => 'ok',
+            'totalResults' => count($items),
+            'items' => ItemResource::collection($items)
+        ]);
+    }
+    //search by name
+    public function searchName(Request $request)
+    {
+        $name=$request->get('name');
+        $items=array();
+        
+        $items = Item::where('name','LIKE',"%{$name}%")->get();
+        //return $items;
+        return response()->json([
+            'status' => 'ok',
+            'totalResults' => count($items),
+            'items' => ItemResource::collection($items)
+        ]);
+    }
+
     
 }

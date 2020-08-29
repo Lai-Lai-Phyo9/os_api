@@ -29,6 +29,11 @@ Route::apiresource('items','Api\ItemController');
 Route::apiresource('users','Api\UserController');
 
 Route::get('filter_item/{sid}/{bid}','Api\ItemController@filter')->name('filter_item');
+Route::get('search_brand','Api\ItemController@searchBrand');
+
+Route::get('search_subcategory','Api\ItemController@searchSubcategory');
+
+Route::get('search_name','Api\ItemController@searchName');
 
 
 
