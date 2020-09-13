@@ -1,18 +1,19 @@
 <?php
 
-namespace App\Http\Controllers\api;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Item;
 use Illuminate\Http\Request;
 use App\Http\Resources\ItemResource;
-use App\Item;
 
 class ItemController extends Controller
 {
-    public function __construct($value='')
-    {
-        $this->middleware('auth:api')->except('index','filter','searchBrand','searchSubcategory','searchName');
-    }
+    // public function __construct($value='')
+    // {
+    //     $this->middleware('auth');
+    // }
+    
     /**
      * Display a listing of the resource.
      *
@@ -20,11 +21,12 @@ class ItemController extends Controller
      */
     public function index()
     {
-        $items=Item::all();
+        $items = Item::all();
+
         return response()->json([
-            "status" => "ok",
-            "totalResults" => count($items),
-            "items" => ItemResource::collection($items)
+            'status' => 'ok',
+            'totalResults' => count($items),
+            'items' => ItemResource::collection($items)
         ]);
     }
 
@@ -36,45 +38,51 @@ class ItemController extends Controller
      */
     public function store(Request $request)
     {
-        //
-        //Validation
+        //dd($request);
+
+        //validation
         $request->validate([
-            'codeno' => 'required',
-            'name' => 'required',
+            'codeno' => 'required|min:4',
+            'name' => 'required|unique:items',
             'photo' => 'required',
             'price' => 'required',
             'discount' => 'required',
             'description' => 'required',
             'brand' => 'required',
-            'subcategory' => 'required',
+            'subcategory' => 'required'
         ]);
 
-        //File Upload
-        $imageName=time().'.'.$request->photo->extension();
-        $request->photo->move(public_path('backendtemplate/itemimg'),$imageName);
-        $myfile='backendtemplate/itemimg/'.$imageName;
+        //if include file, upload
+        $imageName = time().'.'.$request->photo->extension();
 
-        //Store Data
-        $item=new Item;
-        $item->codeno=$request->codeno; //->name in modeltable =->name in form
-        $item->name=$request->name;
-        $item->photo=$myfile;
-        $item->price=$request->price;
-        $item->discount=$request->discount;
-        $item->description=$request->description;
-        $item->brand_id=$request->brand;
-        $item->subcategory_id=$request->subcategory;
+        $request->photo->move(public_path('backendtemplate/itemimg'),$imageName);
+        $myfile = 'backendtemplate/itemimg/'.$imageName;
+
+        //data insert
+        $item = new Item;
+        $item->codeno = $request->codeno;
+        $item->name = $request->name;
+        $item->photo = $myfile;
+        $item->price = $request->price;
+        $item->discount = $request->discount;
+        $item->description = $request->description;
+        $item->brand_id = $request->brand;
+        $item->subcategory_id = $request->subcategory;
         $item->save();
-        return new ItemResource($item);
+
+        //redirect
+        return (new ItemResource($item))
+                    ->response()
+                    ->setStatusCode(201);
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
+     * @param  \App\Item  $item
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Item $item)
     {
         return new ItemResource($item);
     }
@@ -83,10 +91,10 @@ class ItemController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param  \App\Item  $item
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Item $item)
     {
         //
     }
@@ -94,71 +102,47 @@ class ItemController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param  \App\Item  $item
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Item $item)
     {
         //
     }
 
-
-    public function filter($sid,$bid)
+    /**
+     * Filtering the resource from storage.
+     *
+     * @param  \App\Item  $item
+     * @return \Illuminate\Http\Response
+     */
+    public function filter(Request $request)
     {
-        $items=array();
-        if($sid && $bid){
-            $items=Item::where('subcategory_id',$sid)
-                        ->where('brand_id',$bid)
-                        ->get();
-        }else{
-            $items=Item::where('subcategory_id',$sid)
-                        ->or_where('brand_id',$bid)
-                        ->get();
-        }
-        //return $items;
+        $q = $request->q;
+
+        $items = Item::where('name','LIKE',"%{$q}%")->get();
+        // For Case Sensitive (collation => utf8_bin) 
+        
         return response()->json([
-            "status" => "ok",
-            "totalResults" => count($items),
-            "items" => ItemResource::collection($items)
+            'status' => 'ok',
+            'totalResults' => count($items),
+            'items' => ItemResource::collection($items)
         ]);
     }
 
-    //search by brand
-    public function searchBrand(Request $request)
+    /**
+     * Filtering the resource from storage by brand.
+     *
+     * @param  \App\Item  $item
+     * @return \Illuminate\Http\Response
+     */
+    public function byBrand(Request $request)
     {
-        $bid=$request->get('brand');
-        $items=array();
-        
+        $bid = $request->brand;
+
         $items = Item::where('brand_id',$bid)->get();
-        //return $items;
-        return response()->json([
-            'status' => 'ok',
-            'totalResults' => count($items),
-            'items' => ItemResource::collection($items)
-        ]);
-    }
-    //search by subcategory
-    public function searchSubcategory(Request $request)
-    {
-        $sid=$request->get('subcategory');
-        $items=array();
+        // For Case Sensitive (collation => utf8_bin) 
         
-        $items = Item::where('subcategory_id',$sid)->get();
-        //return $items;
-        return response()->json([
-            'status' => 'ok',
-            'totalResults' => count($items),
-            'items' => ItemResource::collection($items)
-        ]);
-    }
-    //search by name
-    public function searchName(Request $request)
-    {
-        $name=$request->get('name');
-        $items=array();
-        
-        $items = Item::where('name','LIKE',"%{$name}%")->get();
-        //return $items;
         return response()->json([
             'status' => 'ok',
             'totalResults' => count($items),
@@ -166,5 +150,23 @@ class ItemController extends Controller
         ]);
     }
 
-    
+    /**
+     * Filtering the resource from storage by subcategory.
+     *
+     * @param  \App\Item  $item
+     * @return \Illuminate\Http\Response
+     */
+    public function bySubcategory(Request $request)
+    {
+        $sid = $request->subcategory;
+
+        $items = Item::where('subcategory_id',$sid)->get();
+        // For Case Sensitive (collation => utf8_bin)
+        
+        return response()->json([
+            'status' => 'ok',
+            'totalResults' => count($items),
+            'items' => ItemResource::collection($items)
+        ]);
+    }
 }

@@ -16,8 +16,13 @@ class SubcategoryController extends Controller
      */
     public function index()
     {
-        $subcategories=Subcategory::all();
-        return SubcategoryResource::collection($subcategories);
+        $subcategories = Subcategory::all();
+
+        return response()->json([
+            'status' => 'ok',
+            'totalResults' => count($subcategories),
+            'items' => SubcategoryResource::collection($subcategories)
+        ]);
     }
 
     /**
@@ -28,18 +33,7 @@ class SubcategoryController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-
-            'name' => 'required',
-            'category' => 'required',
-        ]);
-
-        //Store Data
-        $subcategory=new Subcategory;
-        $subcategory->name=$request->name;
-        $subcategory->category_id=$request->category;
-        $subcategory->save();
-        return new SubcategoryResource($subcategory);
+        //
     }
 
     /**

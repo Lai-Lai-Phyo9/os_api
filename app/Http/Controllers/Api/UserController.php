@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\api;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 class UserController extends Controller
 {
+    // middleware
+    public function __construct($value='')
+    {
+        $this->middleware('auth:api')->except('store');
+    }
     /**
      * Display a listing of the resource.
      *
@@ -17,7 +22,13 @@ class UserController extends Controller
      */
     public function index()
     {
-        //
+        $users = User::all();
+
+        return response()->json([
+            "status" => "ok",
+            "totalResults" => count($users), 
+            "users" => UserResource::collection($users)
+        ]);
     }
 
     /**
@@ -43,7 +54,7 @@ class UserController extends Controller
         $user->email_verified_at=now();
         $user->remember_token=Str::random(10);
         $user->save();
-        return $user;
+        return new UserResource($user);
     }
 
     /**
@@ -52,9 +63,9 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(User $user)
     {
-       // return new UserController($user);
+       return new UserController($user);
     }
 
     /**
